@@ -1,5 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-  <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Deluge Modern</title></head>
-  <body class="bg-zinc-950 text-zinc-100"><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Deluge Modern</title>
+    <script>
+      // Apply the persisted theme before first paint to avoid a flash.
+      // Mirrors the zustand persist key/shape in src/stores/torrents.ts.
+      try {
+        var s = JSON.parse(localStorage.getItem('deluge-modern-store') || '{}');
+        var t = s && s.state && s.state.theme;
+        if (t !== 'light') document.documentElement.classList.add('dark');
+      } catch (e) { document.documentElement.classList.add('dark'); }
+    </script>
+  </head>
+  <body class="bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
 </html>

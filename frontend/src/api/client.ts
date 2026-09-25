@@ -7,6 +7,12 @@ export class DelugeError extends Error {
   constructor(msg: string, code?: number){ super(msg); this.code=code }
 }
 
+// Called when the deluge-web session has expired (RPC error code 1 /
+// "Not authenticated"). The app uses it to drop back to the login screen
+// instead of showing a permanent error.
+let authFailureHandler: (() => void) | null = null
+export function setAuthFailureHandler(fn: (() => void) | null) { authFailureHandler = fn }
+
 export async function delugeRPC<T = any>(method: string, params: any[] = [], signal?: AbortSignal): Promise<T> {
   const res = await fetch('/json', {
     method: 'POST',
@@ -21,6 +27,8 @@ export async function delugeRPC<T = any>(method: string, params: any[] = [], sig
   }
   const json = await res.json()
   if (json.error) {
+    const msg = String(json.error.message || '')
+    if (json.error.code === 1 || /not authenticated/i.test(msg)) authFailureHandler?.()
     throw new DelugeError(json.error.message || JSON.stringify(json.error), json.error.code)
   }
   return json.result as T

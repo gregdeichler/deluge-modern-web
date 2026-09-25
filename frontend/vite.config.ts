@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// NOTE: base './' keeps asset URLs relative so the built app works from any
+// subpath deluge-web serves it at (e.g. /themes/modern/).
 export default defineConfig({
+  base: './',
   plugins: [react()],
   server: {
     port: 3000,

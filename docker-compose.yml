@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   deluge-modern:
     build: .
@@ -13,8 +12,6 @@ services:
       - ./data/downloads:/downloads
     environment:
       - DELUGE_WEB_UI=modern
-      - PUID=1000
-      - PGID=1000
     restart: unless-stopped
 
   frontend-dev:

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { core, auth, web, delugeRPC } from './api/client'
+import { core, auth, web, delugeRPC, setAuthFailureHandler } from './api/client'
 import TorrentTable from './components/TorrentTable'
 import AddTorrentModal from './components/AddTorrentModal'
 import DetailsDrawer from './components/DetailsDrawer'
@@ -44,6 +44,12 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
+
+  // If the deluge-web session expires mid-use, drop back to the login screen.
+  useEffect(() => {
+    setAuthFailureHandler(() => setLoggedIn(false))
+    return () => setAuthFailureHandler(null)
+  }, [])
 
   useEffect(() => {
     auth.check().then((ok) => {

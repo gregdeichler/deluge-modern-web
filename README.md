@@ -22,20 +22,32 @@ Drop-in replacement for the aged ExtJS Deluge Web UI.
 3. Login with password `deluge`
 4. Type check: `npx tsc --noEmit -p tsconfig.json`
 
-## Build as replacement
-Option A - Overwrite stock WebUI (simplest):
+## Deploy
+Docker (recommended):
 ```bash
-npm run build
-# dist is at deluge_modern_web/data/dist
-sudo cp -r deluge_modern_web/data/dist/* /usr/lib/python3/dist-packages/deluge/ui/web/static/
-# or inside venv: $(python -c "import deluge; print(...))/ui/web/...
+docker compose up -d --build
+# UI at http://<host>:8112/ (redirects to /themes/modern/)
+# config persists in ./data/config, downloads in ./data/downloads
+```
+
+Manual — replace the stock WebUI:
+```bash
+cd frontend && npm run build   # dist lands in deluge_modern_web/data/dist
+SITE=$(python3 -c "import deluge, os; print(os.path.dirname(deluge.__file__))")
+# deluge-web only serves fixed subpaths; themes/ is a full static.File tree,
+# so the SPA (index.html + assets/) is served intact from /themes/modern/
+sudo mkdir -p $SITE/ui/web/themes/modern
+sudo cp -r deluge_modern_web/data/dist/. $SITE/ui/web/themes/modern/
+# redirect / to the new UI (stock index.html is a Mako template; plain HTML is fine)
+echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/themes/modern/index.html"></head><body>Redirecting to Modern UI...</body></html>' | sudo tee $SITE/ui/web/index.html
 sudo systemctl restart deluge-web
 ```
 
-Option B - Plugin:
+Plugin (serves the UI at `/modern/` alongside the stock UI):
 ```bash
 python setup.py bdist_egg
-# egg appears in dist/, add via Deluge GTK/Web > Preferences > Plugins
+# egg appears in dist/ — install via Deluge GTK > Preferences > Plugins,
+# or copy to ~/.config/deluge/plugins/ and enable it
 ```
 
 ## API coverage
