@@ -32,6 +32,9 @@ export const ALL_COLUMNS: ColumnDef[] = [
 ]
 
 interface State {
+  theme: 'dark' | 'light'
+  setTheme: (t: 'dark' | 'light') => void
+  toggleTheme: () => void
   filter: string
   search: string
   trackerFilter: string | null
@@ -55,6 +58,9 @@ interface State {
 }
 
 export const useStore = create<State>()(persist((set, get) => ({
+  theme: 'dark',
+  setTheme: (t) => set({ theme: t }),
+  toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
   filter: 'All',
   search: '',
   trackerFilter: null,
@@ -89,7 +95,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   name: 'deluge-modern-store',
   partialize: (s) => ({
     sortKey: s.sortKey, sortDir: s.sortDir, visibleColumns: s.visibleColumns,
-    filter: s.filter
+    filter: s.filter, theme: s.theme
   }),
   // custom serializer for Set
   storage: {

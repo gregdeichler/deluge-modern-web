@@ -40,6 +40,8 @@ export const web = {
   connect: (hostId: string) => delugeRPC('web.connect', [hostId]),
   disconnect: () => delugeRPC('web.disconnect'),
   update_ui: (keys: string[], filter: FilterDict) => delugeRPC('web.update_ui', [keys, filter]),
+  add_torrents: (torrents: { path: string; options?: Record<string, any> }[]) =>
+    delugeRPC('web.add_torrents', [torrents]),
 }
 
 // Core

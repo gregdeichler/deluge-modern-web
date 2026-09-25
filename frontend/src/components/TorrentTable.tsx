@@ -4,7 +4,7 @@ import { ALL_COLUMNS, ColumnId, SortKey, SortDir } from '../stores/torrents'
 
 type Props = {
   torrents: any[]
-  onSelect: (h: string) => void
+  onSelect: (h: string, e: React.MouseEvent) => void
   selected: Set<string>
   sortKey: SortKey
   sortDir: SortDir
@@ -38,23 +38,9 @@ export default function TorrentTable({ torrents, onSelect, selected, sortKey, so
   const cols = useMemo(() => ALL_COLUMNS.filter((c) => visibleColumns.includes(c.id)), [visibleColumns])
   const gridCols = useMemo(() => cols.map((c) => c.width).join(' '), [cols])
 
-  const sorted = useMemo(() => {
-    const dir = sortDir === 'asc' ? 1 : -1
-    return [...torrents].sort((a, b) => {
-      const ka = a[sortKey]
-      const kb = b[sortKey]
-      if (ka == null && kb == null) return 0
-      if (ka == null) return 1
-      if (kb == null) return -1
-      if (typeof ka === 'string' && typeof kb === 'string') {
-        return ka.localeCompare(kb) * dir
-      }
-      return (ka > kb ? 1 : ka < kb ? -1 : 0) * dir
-    })
-  }, [torrents, sortKey, sortDir])
-
+  // torrents arrive pre-sorted from App (shift+click range select follows this order)
   const rowVirtualizer = useVirtualizer({
-    count: sorted.length,
+    count: torrents.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 38,
     overscan: 20,
@@ -63,7 +49,7 @@ export default function TorrentTable({ torrents, onSelect, selected, sortKey, so
   const header = (c: typeof ALL_COLUMNS[number]) => {
     const isSorted = c.sortKey === sortKey
     return (
-      <button key={c.id} onClick={() => c.sortKey && onSort(c.sortKey)} className={`flex items-center gap-1 text-left hover:text-white ${c.sortKey ? 'cursor-pointer' : 'cursor-default'}`}>
+      <button key={c.id} onClick={() => c.sortKey && onSort(c.sortKey)} className={`flex items-center gap-1 text-left hover:text-zinc-900 dark:hover:text-white ${c.sortKey ? 'cursor-pointer' : 'cursor-default'}`}>
         {c.label}
         {isSorted && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
       </button>
@@ -72,40 +58,40 @@ export default function TorrentTable({ torrents, onSelect, selected, sortKey, so
 
   return (
     <div ref={parentRef} className="flex-1 overflow-auto">
-      <div className="sticky top-0 z-10 grid gap-2 px-3 py-2 text-[11px] uppercase tracking-wider text-zinc-400 bg-zinc-900 border-b border-zinc-800" style={{ gridTemplateColumns: gridCols }}>
+      <div className="sticky top-0 z-10 grid gap-2 px-3 py-2 text-[11px] uppercase tracking-wider text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800" style={{ gridTemplateColumns: gridCols }}>
         {cols.map(header)}
       </div>
       <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
         {rowVirtualizer.getVirtualItems().map((v) => {
-          const t = sorted[v.index]
+          const t = torrents[v.index]
           const isSel = selected.has(t.hash)
           return (
-            <div key={t.hash} onClick={() => onSelect(t.hash)} style={{ transform: `translateY(${v.start}px)`, gridTemplateColumns: gridCols }} className={`absolute top-0 left-0 w-full grid gap-2 px-3 py-2 text-sm border-b border-zinc-900/80 hover:bg-zinc-900 cursor-pointer ${isSel ? 'bg-zinc-900 ring-1 ring-zinc-700' : ''}`}>
+            <div key={t.hash} onClick={(e) => onSelect(t.hash, e)} style={{ transform: `translateY(${v.start}px)`, gridTemplateColumns: gridCols }} className={`absolute top-0 left-0 w-full grid gap-2 px-3 py-2 text-sm border-b border-zinc-200/80 dark:border-zinc-900/80 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer ${isSel ? 'bg-zinc-100 dark:bg-zinc-900 ring-1 ring-zinc-300 dark:ring-zinc-700' : ''}`}>
               {cols.map((col) => {
                 switch (col.id) {
                   case 'name':
                     return <span key={col.id} className="truncate font-medium" title={t.name}>{t.name}</span>
                   case 'size':
-                    return <span key={col.id} className="text-zinc-400">{formatSize(t.total_wanted)}</span>
+                    return <span key={col.id} className="text-zinc-600 dark:text-zinc-400">{formatSize(t.total_wanted)}</span>
                   case 'progress':
                     return (
                       <div key={col.id} className="flex items-center gap-2">
-                        <div className="h-1.5 flex-1 bg-zinc-800 rounded-full overflow-hidden">
+                        <div className="h-1.5 flex-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                           <div className="h-full transition-all" style={{ width: `${t.progress}%`, backgroundColor: t.state === 'Seeding' ? '#10b981' : t.state === 'Downloading' ? '#0ea5e9' : '#52525b' }} />
                         </div>
                         <span className="text-xs w-10 text-right">{t.progress.toFixed(1)}%</span>
                       </div>
                     )
                   case 'down':
-                    return <span key={col.id} className="text-emerald-400 tabular-nums">{t.download_payload_rate ? `${(t.download_payload_rate / 1024).toFixed(0)} KB/s` : ''}</span>
+                    return <span key={col.id} className="text-emerald-600 dark:text-emerald-400 tabular-nums">{t.download_payload_rate ? `${(t.download_payload_rate / 1024).toFixed(0)} KB/s` : ''}</span>
                   case 'up':
-                    return <span key={col.id} className="text-sky-400 tabular-nums">{t.upload_payload_rate ? `${(t.upload_payload_rate / 1024).toFixed(0)} KB/s` : ''}</span>
+                    return <span key={col.id} className="text-sky-600 dark:text-sky-400 tabular-nums">{t.upload_payload_rate ? `${(t.upload_payload_rate / 1024).toFixed(0)} KB/s` : ''}</span>
                   case 'state':
-                    return <span key={col.id} className={`text-xs px-2 py-0.5 rounded-full w-fit ${t.state === 'Downloading' ? 'bg-sky-950 text-sky-300 border border-sky-900' : t.state === 'Seeding' ? 'bg-emerald-950 text-emerald-300 border border-emerald-900' : t.state === 'Paused' ? 'bg-zinc-800 text-zinc-400' : t.state === 'Error' ? 'bg-red-950 text-red-300 border border-red-900' : 'bg-zinc-800 text-zinc-400'}`}>{t.state}</span>
+                    return <span key={col.id} className={`text-xs px-2 py-0.5 rounded-full w-fit ${t.state === 'Downloading' ? 'bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-900' : t.state === 'Seeding' ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900' : t.state === 'Paused' ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400' : t.state === 'Error' ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'}`}>{t.state}</span>
                   case 'eta':
-                    return <span key={col.id} className="tabular-nums text-zinc-400">{formatEta(t.eta)}</span>
+                    return <span key={col.id} className="tabular-nums text-zinc-600 dark:text-zinc-400">{formatEta(t.eta)}</span>
                   case 'ratio':
-                    return <span key={col.id} className="tabular-nums">{t.ratio?.toFixed(2)}</span>
+                    return <span key={col.id} className="tabular-nums">{t.ratio == null ? '' : t.ratio < 0 ? '∞' : t.ratio.toFixed(2)}</span>
                   case 'tracker':
                     return <span key={col.id} className="truncate text-zinc-500 text-xs">{t.tracker_host}</span>
                   case 'added':
@@ -122,7 +108,7 @@ export default function TorrentTable({ torrents, onSelect, selected, sortKey, so
           )
         })}
       </div>
-      {sorted.length === 0 && <div className="p-12 text-center text-sm text-zinc-600">No torrents match filters</div>}
+      {torrents.length === 0 && <div className="p-12 text-center text-sm text-zinc-600">No torrents match filters</div>}
     </div>
   )
 }

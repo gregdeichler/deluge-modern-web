@@ -1,0 +1,8 @@
+node_modules/
+frontend/dist/
+deluge_modern_web/data/dist/
+*.egg-info/
+dist/
+build/
+__pycache__/
+.DS_Store
