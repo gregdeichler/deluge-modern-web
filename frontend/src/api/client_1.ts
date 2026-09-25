@@ -38,4 +38,5 @@ export const core = {
   remove: (hash: string, remove_data=false) => delugeRPC('core.remove_torrent', [hash, remove_data]),
   add_magnet: (magnet: string, opts: any) => delugeRPC('core.add_torrent_magnet', [magnet, opts]),
   add_url: (url: string, opts: any) => delugeRPC('core.add_torrent_url', [url, opts]),
+  set_file_priorities: (hash: string, prios: Record<number, number>) => delugeRPC('core.set_torrent_file_priorities', [hash, prios]),
 }
