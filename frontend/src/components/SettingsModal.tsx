@@ -2,28 +2,42 @@ import { useQuery } from '@tanstack/react-query'
 import { core } from '../api/client'
 import { useState, useEffect } from 'react'
 
-export default function SettingsModal({ open, onClose }: { open: boolean; onClose: ()=>void }) {
-  const { data: cfg, isLoading, error } = useQuery({ queryKey: ['config'], queryFn: () => core.get_config(), enabled: open })
+export default function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { data: cfg, isLoading, error } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => core.get_config(),
+    enabled: open,
+  })
   const [local, setLocal] = useState<any>({})
   const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string|null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
-  useEffect(()=>{ if(cfg) setLocal(cfg) }, [cfg])
+  useEffect(() => {
+    if (cfg) setLocal(cfg)
+  }, [cfg])
 
   if (!open) return null
 
   const save = async () => {
-    setSaving(true); setSaveError(null)
+    setSaving(true)
+    setSaveError(null)
     try {
       await core.set_config(local)
       onClose()
-    } catch(e:any){ setSaveError(e.message) } finally { setSaving(false) }
+    } catch (e: any) {
+      setSaveError(e.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const Field = ({ label, k, type='text', hint }: { label: string; k: string; type?: string; hint?: string }) => (
+  const Field = ({ label, k, type = 'text', hint }: { label: string; k: string; type?: string; hint?: string }) => (
     <div className="flex items-start justify-between gap-4 py-2.5">
-      <div className="flex-1"><span className="text-sm text-zinc-300">{label}</span>{hint && <p className="text-[11px] text-zinc-500">{hint}</p>}</div>
-      <input type={type} value={local[k] ?? ''} onChange={e=>setLocal({...local, [k]: type==='number' ? Number(e.target.value) : e.target.value})} className="w-64 px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm focus:outline-none focus:border-zinc-700"/>
+      <div className="flex-1">
+        <span className="text-sm text-zinc-300">{label}</span>
+        {hint && <p className="text-[11px] text-zinc-500">{hint}</p>}
+      </div>
+      <input type={type} value={local[k] ?? ''} onChange={(e) => setLocal({ ...local, [k]: type === 'number' ? Number(e.target.value) : e.target.value })} className="w-64 px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm focus:outline-none focus:border-zinc-700" />
     </div>
   )
 
@@ -31,7 +45,10 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="w-[720px] max-w-full max-h-[85vh] overflow-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl flex flex-col">
         <div className="sticky top-0 bg-zinc-900 p-6 pb-4 border-b border-zinc-800 flex justify-between items-center">
-          <div><h2 className="text-lg font-semibold">Settings</h2><p className="text-xs text-zinc-500">core.get_config / set_config</p></div>
+          <div>
+            <h2 className="text-lg font-semibold">Settings</h2>
+            <p className="text-xs text-zinc-500">core.get_config / set_config</p>
+          </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center">✕</button>
         </div>
         <div className="p-6 space-y-4">
