@@ -26,7 +26,6 @@ export default function App() {
     setLoginError(null)
     try {
       const res = await auth.login(pw)
-      localStorage.setItem('deluge-pw', pw)
       const c = await web.connected().catch(() => false)
       if (!c) {
         const hosts = await web.get_hosts().catch(() => [])
@@ -41,6 +40,12 @@ export default function App() {
       setLoginError(e.message)
     }
   }
+
+  useEffect(() => {
+    // Older builds persisted this credential. Deluge sessions are cookie-based,
+    // so retaining the raw password provides no benefit and increases risk.
+    localStorage.removeItem('deluge-pw')
+  }, [])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
