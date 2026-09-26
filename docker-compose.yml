@@ -1,6 +1,25 @@
 services:
+  # Safe option when Deluge already exists on another host. This container only
+  # serves the built frontend. Put it behind a reverse proxy that sends /json
+  # and /upload to the existing Deluge Web endpoint.
+  static-ui:
+    build:
+      context: .
+      target: static-ui
+      args:
+        BUILD_SHA: ${BUILD_SHA:-local}
+    container_name: deluge-modern-ui
+    ports:
+      - "8113:8080"
+    profiles: ["static"]
+    restart: unless-stopped
+
+  # All-in-one demonstration deployment. Do not use this beside an existing
+  # production Deluge daemon because it creates independent state and downloads.
   deluge-modern:
-    build: .
+    build:
+      context: .
+      target: bundled-deluge
     container_name: deluge-modern
     ports:
       - "8112:8112"
@@ -13,6 +32,7 @@ services:
     environment:
       - DELUGE_WEB_UI=modern
     restart: unless-stopped
+    profiles: ["bundled"]
 
   frontend-dev:
     image: node:20-alpine

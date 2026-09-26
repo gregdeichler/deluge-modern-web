@@ -21,11 +21,50 @@ Drop-in replacement for the aged ExtJS Deluge Web UI.
 2. `cd frontend && npm install && npm run dev` -> http://localhost:3000 (proxies /json and /upload)
 3. Login with password `deluge`
 4. Type check: `npx tsc --noEmit -p tsconfig.json`
+5. Tests: `npm test`
 
-## Deploy
-Docker (recommended):
+## Deploy in front of an existing Deluge (recommended for production)
+
+Build a static artifact. It contains only HTML, CSS, and JavaScript; it does not
+start Deluge or own any torrent configuration or download data.
+
 ```bash
-docker compose up -d --build
+cd frontend
+npm ci
+BUILD_SHA="$(git rev-parse HEAD)" npm run build
+# output: ../deluge_modern_web/data/dist/
+```
+
+Serve that directory from the same origin that proxies these exact paths to the
+existing Deluge Web service:
+
+- `POST /json` — Deluge JSON-RPC and session authentication
+- `POST /upload` — `.torrent` file staging
+
+The browser must see the UI and both API paths on one HTTPS hostname so Deluge's
+session cookie remains same-origin. Cache hashed `/assets/*` files as immutable;
+serve `index.html` with `no-cache` and fall back to it for client-side routes.
+
+A static-only Docker image is also available:
+
+```bash
+docker build --target static-ui --build-arg BUILD_SHA="$(git rev-parse HEAD)" -t deluge-modern-web:local .
+docker run --rm -p 8113:8080 deluge-modern-web:local
+```
+
+It deliberately does not proxy `/json` or `/upload`; configure those paths in
+the site's existing reverse proxy. `GET /healthz` tests the static container.
+
+CI runs the typecheck, API tests, and production build, then publishes a static
+artifact and SHA-256 checksum for every push to `main`.
+
+## Bundled demonstration deployment
+
+This option starts a new, independent Deluge daemon. Do not use it to replace
+the UI of an existing production Deluge installation.
+
+```bash
+docker compose --profile bundled up -d --build deluge-modern
 # UI at http://<host>:8112/ (redirects to /themes/modern/)
 # config persists in ./data/config, downloads in ./data/downloads
 ```

@@ -8,12 +8,13 @@ import CommandPalette from './components/CommandPalette'
 import ColumnPicker from './components/ColumnPicker'
 import { useStore } from './stores/torrents'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { buildLabel } from './build'
 
 const KEYS = ['name','hash','state','progress','total_wanted','total_done','download_payload_rate','upload_payload_rate','eta','ratio','tracker_host','save_path','time_added','num_seeds','num_peers','label','labels','queue']
 
 export default function App() {
   const { theme, toggleTheme, filter, search, trackerFilter, labelFilter, sortKey, sortDir, visibleColumns, selected, setFilter, setSearch, setTrackerFilter, setLabelFilter, setSort, selectOnly, toggleSelect, selectMany, clearSelect } = useStore()
-  const [pw, setPw] = useState(localStorage.getItem('deluge-pw') || 'deluge')
+  const [pw, setPw] = useState(localStorage.getItem('deluge-pw') || '')
   const [loggedIn, setLoggedIn] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
@@ -188,10 +189,10 @@ export default function App() {
         <div className="p-6 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 w-[360px] shadow-2xl">
           <h1 className="font-semibold text-lg mb-1">Deluge Modern</h1>
           <p className="text-xs text-zinc-500 mb-4">Connects to /json — same auth as stock WebUI</p>
-          <input value={pw} onChange={(e) => setPw(e.target.value)} type="password" placeholder="Password (default: deluge)" className="w-full px-3 py-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl mb-3 text-sm" onKeyDown={(e) => { if (e.key === 'Enter') login() }} />
+          <input value={pw} onChange={(e) => setPw(e.target.value)} type="password" placeholder="Deluge Web password" className="w-full px-3 py-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl mb-3 text-sm" onKeyDown={(e) => { if (e.key === 'Enter') login() }} />
           {loginError && <div className="text-xs text-red-600 dark:text-red-400 bg-red-100/50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 rounded-lg p-2 mb-3">{loginError}</div>}
           <button onClick={login} className="w-full py-2.5 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-full font-medium hover:bg-zinc-700 dark:hover:bg-zinc-200">Login</button>
-          <p className="text-[11px] text-zinc-600 mt-3">Tip: Vite proxy must point to localhost:8112. See vite.config.ts</p>
+          <p className="text-[11px] text-zinc-600 mt-3">Uses the same account and session as Deluge Web · {buildLabel}</p>
         </div>
       </div>
     )
@@ -286,7 +287,7 @@ export default function App() {
           {detailHash && <DetailsDrawer hash={detailHash} onClose={() => setDetailHash(null)} />}
           <footer className="h-8 flex items-center justify-between px-3 text-xs text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 shrink-0">
             <span>Down: {filtered.reduce((a, b) => a + (b.download_payload_rate || 0), 0) / 1024 | 0} KB/s • Up: {filtered.reduce((a, b) => a + (b.upload_payload_rate || 0), 0) / 1024 | 0} • {filtered.length} torrents</span>
-            <span className="hidden md:inline">Filters: {[filter !== 'All' && filter, trackerFilter, labelFilter, search && `"${search}"`].filter(Boolean).join(' • ') || 'none'}</span>
+            <span className="hidden md:inline">{buildLabel} · Filters: {[filter !== 'All' && filter, trackerFilter, labelFilter, search && `"${search}"`].filter(Boolean).join(' • ') || 'none'}</span>
           </footer>
         </main>
       </div>

@@ -1,12 +1,14 @@
 {
   "name": "deluge-modern-web",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 8113"
+    "preview": "vite preview --port 8113",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -18,9 +20,10 @@
   "devDependencies": {
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.2",
+    "@vitejs/plugin-react": "^6.1.1",
     "typescript": "^5.5.3",
-    "vite": "^5.4.1",
+    "vitest": "^5.0.2",
+    "vite": "^8.3.1",
     "tailwindcss": "^3.4.10",
     "postcss": "^8.4.40",
     "autoprefixer": "^10.4.19"

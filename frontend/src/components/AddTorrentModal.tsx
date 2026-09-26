@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { core, web } from '../api/client'
+import { core, uploadTorrent, web } from '../api/client'
 
 export default function AddTorrentModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [magnet, setMagnet] = useState('')
@@ -65,15 +65,8 @@ export default function AddTorrentModal({ open, onClose }: { open: boolean; onCl
                 <input type="file" accept=".torrent,application/x-bittorrent" className="hidden" onChange={async (e) => {
                   const f = e.target.files?.[0]
                   if (!f) return
-                  const fd = new FormData()
-                  fd.append('file', f)
-                  fd.append('filename', f.name)
                   try {
-                    const res = await fetch('/upload', { method: 'POST', body: fd, credentials: 'include' })
-                    const json = await res.json()
-                    // deluge-web returns a JSON array of staged temp paths
-                    const staged = Array.isArray(json) ? json[0] : json
-                    if (typeof staged !== 'string') throw new Error('unexpected /upload response')
+                    const staged = await uploadTorrent(f)
                     setUploadedPath(staged)
                     setUploadedName(f.name)
                   } catch (err: any) {

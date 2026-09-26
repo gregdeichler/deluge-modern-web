@@ -1,6 +1,11 @@
 
 let rpcId = 1
 
+export const DELUGE_ENDPOINTS = {
+  rpc: '/json',
+  upload: '/upload',
+} as const
+
 export type FilterDict = Record<string, any>
 export class DelugeError extends Error {
   code?: number
@@ -14,7 +19,7 @@ let authFailureHandler: (() => void) | null = null
 export function setAuthFailureHandler(fn: (() => void) | null) { authFailureHandler = fn }
 
 export async function delugeRPC<T = any>(method: string, params: any[] = [], signal?: AbortSignal): Promise<T> {
-  const res = await fetch('/json', {
+  const res = await fetch(DELUGE_ENDPOINTS.rpc, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -25,13 +30,43 @@ export async function delugeRPC<T = any>(method: string, params: any[] = [], sig
     const text = await res.text().catch(()=> '')
     throw new DelugeError(`HTTP ${res.status} ${method}: ${text.slice(0,300)}`, res.status)
   }
-  const json = await res.json()
+  let json: any
+  try {
+    json = await res.json()
+  } catch {
+    throw new DelugeError(`Invalid JSON response for ${method}`)
+  }
+  if (!json || typeof json !== 'object' || (!('result' in json) && !('error' in json))) {
+    throw new DelugeError(`Malformed RPC response for ${method}`)
+  }
   if (json.error) {
     const msg = String(json.error.message || '')
     if (json.error.code === 1 || /not authenticated/i.test(msg)) authFailureHandler?.()
     throw new DelugeError(json.error.message || JSON.stringify(json.error), json.error.code)
   }
   return json.result as T
+}
+
+export async function uploadTorrent(file: File): Promise<string> {
+  const body = new FormData()
+  body.append('file', file)
+  body.append('filename', file.name)
+  const res = await fetch(DELUGE_ENDPOINTS.upload, {
+    method: 'POST',
+    body,
+    credentials: 'include',
+  })
+  if (!res.ok) throw new DelugeError(`HTTP ${res.status} upload`, res.status)
+
+  let json: unknown
+  try {
+    json = await res.json()
+  } catch {
+    throw new DelugeError('Invalid JSON response for upload')
+  }
+  const staged = Array.isArray(json) ? json[0] : json
+  if (typeof staged !== 'string' || !staged) throw new DelugeError('Malformed upload response')
+  return staged
 }
 
 // Auth

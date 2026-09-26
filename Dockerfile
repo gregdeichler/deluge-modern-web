@@ -4,9 +4,18 @@ WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
-RUN npm run build
+ARG BUILD_SHA=container
+RUN BUILD_SHA="$BUILD_SHA" npm run build
 
-FROM python:3.11-slim
+# Static-only image for sites that already run Deluge elsewhere. It contains no
+# daemon, Python runtime, configuration volume, or download volume. A reverse
+# proxy must route /json and /upload to the existing Deluge Web service.
+FROM nginx:1.27-alpine AS static-ui
+COPY docker/static-nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=frontend-builder /app/deluge_modern_web/data/dist /usr/share/nginx/html
+EXPOSE 8080
+
+FROM python:3.11-slim AS bundled-deluge
 RUN apt-get update && apt-get install -y --no-install-recommends libtorrent-rasterbar-dev && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir deluge[all]
 
