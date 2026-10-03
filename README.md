@@ -12,9 +12,19 @@ Drop-in replacement for the aged ExtJS Deluge Web UI.
 - Multi-select: Ctrl/⌘-click to toggle, Shift-click for ranges
 - Details drawer: Files tab with per-file priorities, Peers, Trackers, torrent options
 - Add torrent dialog: magnet, URL, or .torrent file upload, download path, start-paused
+- Drag-and-drop and multi-file `.torrent` review, sequential-download option
+- Explicit keep-data/remove-data confirmation when removing torrents
+- Configurable live refresh interval and connection health indicator
 - Settings page (core.get_config / set_config): downloads, bandwidth, queue
 - Command palette (⌘K) with keyboard navigation — jump to torrents or run actions
 - Dark / light theme (persisted), persisted sort/columns/filter preferences
+- Responsive phone/tablet layout
+
+## Chrome remote add
+
+An unpacked Manifest V3 extension is included in [`chrome-extension/`](chrome-extension/README.md). It can send a magnet, torrent URL, or the current page to a remote Deluge Web instance from Chrome's toolbar or link context menu. It uses Deluge's existing authenticated `/json` API and requests access only to the configured Deluge origin.
+
+For remote use, put Deluge Web behind HTTPS and authentication (or access it through a private VPN); do not expose an unencrypted Deluge Web login directly to the internet.
 
 ## Dev
 1. Run deluge: `docker run -p 8112:8112 linuxserver/deluge`

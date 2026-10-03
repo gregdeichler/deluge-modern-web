@@ -1,0 +1,15 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Deluge Remote Add settings</title><link rel="stylesheet" href="styles.css"></head>
+<body><main>
+  <h1>Deluge Remote Add</h1>
+  <p>Connect to Deluge Web over HTTPS or through your VPN. The extension requests access only to the origin you save.</p>
+  <form id="settings">
+    <label>Deluge Web URL<input id="baseUrl" type="url" required placeholder="https://deluge.example.com"></label>
+    <label>Deluge Web password<input id="password" type="password" autocomplete="new-password"><small>Stored locally by Chrome. Leave blank to rely on an existing Deluge session.</small></label>
+    <label>Download path<input id="downloadPath" placeholder="/downloads (optional)"></label>
+    <label class="check"><input id="paused" type="checkbox"> Start paused</label>
+    <label class="check"><input id="sequential" type="checkbox"> Download sequentially</label>
+    <button type="submit">Save</button>
+    <output id="status" aria-live="polite"></output>
+  </form>
+</main><script src="options.js" type="module"></script></body></html>

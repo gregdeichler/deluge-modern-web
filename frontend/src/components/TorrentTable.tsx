@@ -57,7 +57,7 @@ export default function TorrentTable({ torrents, onSelect, selected, sortKey, so
   }
 
   return (
-    <div ref={parentRef} className="flex-1 overflow-auto">
+    <div ref={parentRef} className="flex-1 overflow-auto min-w-[760px]">
       <div className="sticky top-0 z-10 grid gap-2 px-3 py-2 text-[11px] uppercase tracking-wider text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800" style={{ gridTemplateColumns: gridCols }}>
         {cols.map(header)}
       </div>

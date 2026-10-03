@@ -43,6 +43,7 @@ interface State {
   sortDir: SortDir
   visibleColumns: ColumnId[]
   selected: Set<string>
+  refreshInterval: number
   setFilter: (f: string) => void
   setSearch: (s: string) => void
   setTrackerFilter: (t: string | null) => void
@@ -55,6 +56,7 @@ interface State {
   selectOnly: (h: string) => void
   clearSelect: () => void
   selectMany: (hashes: string[]) => void
+  setRefreshInterval: (ms: number) => void
 }
 
 export const useStore = create<State>()(persist((set, get) => ({
@@ -69,6 +71,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   sortDir: 'asc',
   visibleColumns: ALL_COLUMNS.filter(c=>c.defaultVisible).map(c=>c.id),
   selected: new Set() as Set<string>,
+  refreshInterval: 1500,
   setFilter: (f) => set({ filter: f }),
   setSearch: (s) => set({ search: s }),
   setTrackerFilter: (t) => set({ trackerFilter: t }),
@@ -91,11 +94,12 @@ export const useStore = create<State>()(persist((set, get) => ({
   selectOnly: (h) => set({ selected: new Set([h]) }),
   clearSelect: () => set({ selected: new Set() }),
   selectMany: (hashes) => set({ selected: new Set(hashes) }),
+  setRefreshInterval: (ms) => set({ refreshInterval: Math.max(500, Math.min(30000, ms)) }),
 }), {
   name: 'deluge-modern-store',
   partialize: (s) => ({
     sortKey: s.sortKey, sortDir: s.sortDir, visibleColumns: s.visibleColumns,
-    filter: s.filter, theme: s.theme
+    filter: s.filter, theme: s.theme, refreshInterval: s.refreshInterval
   }),
   // custom serializer for Set
   storage: {

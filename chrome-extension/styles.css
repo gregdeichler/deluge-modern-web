@@ -1,0 +1,7 @@
+:root { color-scheme: dark; font: 14px system-ui, sans-serif; background: #09090b; color: #f4f4f5; }
+body { margin: 0; } body.popup { width: 340px; } main { max-width: 620px; margin: 0 auto; padding: 24px; }
+h1 { margin: 0 0 8px; font-size: 20px; } p, small { color: #a1a1aa; }
+form { display: grid; gap: 14px; margin-top: 24px; } label { display: grid; gap: 6px; } label.check { display: flex; align-items: center; }
+input, textarea { box-sizing: border-box; width: 100%; border: 1px solid #3f3f46; border-radius: 10px; padding: 10px 12px; background: #18181b; color: inherit; font: inherit; }
+button { border: 0; border-radius: 999px; padding: 10px 16px; background: #f4f4f5; color: #09090b; font-weight: 650; cursor: pointer; }
+button.secondary { background: #27272a; color: #f4f4f5; } output { min-height: 20px; color: #86efac; }

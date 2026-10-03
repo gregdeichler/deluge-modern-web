@@ -6,6 +6,7 @@ import DetailsDrawer from './components/DetailsDrawer'
 import SettingsModal from './components/SettingsModal'
 import CommandPalette from './components/CommandPalette'
 import ColumnPicker from './components/ColumnPicker'
+import RemoveTorrentModal from './components/RemoveTorrentModal'
 import { useStore } from './stores/torrents'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { buildLabel } from './build'
@@ -13,7 +14,7 @@ import { buildLabel } from './build'
 const KEYS = ['name','hash','state','progress','total_wanted','total_done','download_payload_rate','upload_payload_rate','eta','ratio','tracker_host','save_path','time_added','num_seeds','num_peers','label','labels','queue']
 
 export default function App() {
-  const { theme, toggleTheme, filter, search, trackerFilter, labelFilter, sortKey, sortDir, visibleColumns, selected, setFilter, setSearch, setTrackerFilter, setLabelFilter, setSort, selectOnly, toggleSelect, selectMany, clearSelect } = useStore()
+  const { theme, toggleTheme, filter, search, trackerFilter, labelFilter, sortKey, sortDir, visibleColumns, selected, refreshInterval, setFilter, setSearch, setTrackerFilter, setLabelFilter, setSort, selectOnly, toggleSelect, selectMany, clearSelect } = useStore()
   const [pw, setPw] = useState(localStorage.getItem('deluge-pw') || '')
   const [loggedIn, setLoggedIn] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
@@ -21,6 +22,9 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [detailHash, setDetailHash] = useState<string | null>(null)
+  const [removeOpen, setRemoveOpen] = useState(false)
+  const [removeBusy, setRemoveBusy] = useState(false)
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([])
 
   const login = async () => {
     setLoginError(null)
@@ -63,7 +67,7 @@ export default function App() {
     }).catch(() => {})
   }, [])
 
-  const { data: rawTorrents, error, isLoading } = useQuery({
+  const { data: rawTorrents, error, isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['torrents', filter],
     queryFn: async () => {
       const f: any = {}
@@ -72,7 +76,7 @@ export default function App() {
       return Object.values(res) as any[]
     },
     enabled: loggedIn,
-    refetchInterval: 1500,
+    refetchInterval: refreshInterval,
     retry: false,
   })
 
@@ -151,12 +155,7 @@ export default function App() {
     try {
       if (action === 'pause') await core.pause(selectedList)
       if (action === 'resume') await core.resume(selectedList)
-      if (action === 'remove' && confirm(`Remove ${selectedList.length} torrent(s)? Data will be kept.`)) {
-        for (const h of selectedList) {
-          await core.remove(h, false)
-        }
-        clearSelect()
-      }
+      if (action === 'remove') setRemoveOpen(true)
       if (action === 'recheck') {
         for (const h of selectedList) {
           await delugeRPC('core.force_recheck', [[h]])
@@ -166,6 +165,35 @@ export default function App() {
       alert(e.message)
     }
   }, [selectedList, clearSelect])
+
+  const confirmRemove = useCallback(async (removeData: boolean) => {
+    setRemoveBusy(true)
+    try {
+      for (const hash of selectedList) await core.remove(hash, removeData)
+      clearSelect()
+      setRemoveOpen(false)
+    } catch (e: any) {
+      alert(e.message)
+    } finally {
+      setRemoveBusy(false)
+    }
+  }, [selectedList, clearSelect])
+
+  useEffect(() => {
+    const dragOver = (event: DragEvent) => {
+      if (event.dataTransfer?.types.includes('Files')) event.preventDefault()
+    }
+    const drop = (event: DragEvent) => {
+      const files = Array.from(event.dataTransfer?.files || []).filter((file) => file.name.toLowerCase().endsWith('.torrent'))
+      if (!files.length) return
+      event.preventDefault()
+      setDroppedFiles(files)
+      setShowAdd(true)
+    }
+    window.addEventListener('dragover', dragOver)
+    window.addEventListener('drop', drop)
+    return () => { window.removeEventListener('dragover', dragOver); window.removeEventListener('drop', drop) }
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -205,7 +233,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <header className="h-12 flex items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 shrink-0">
+      <header className="min-h-12 flex items-center justify-between gap-2 px-2 sm:px-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 shrink-0">
         <div className="flex items-center gap-3">
           <span className="font-bold tracking-tight">deluge</span>
           <div className="relative hidden md:block">
@@ -215,16 +243,16 @@ export default function App() {
           <span className="text-xs text-zinc-500 hidden lg:inline">{isLoading ? 'loading...' : `${filtered.length}/${rawTorrents?.length || 0}`}</span>
         </div>
         <div className="flex items-center gap-2">
-          <ColumnPicker />
+          <span className="hidden sm:inline-flex"><ColumnPicker /></span>
           <button onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 rounded-full text-xs">{theme === 'dark' ? '☀' : '☾'}</button>
-          <button onClick={() => setShowPalette(true)} className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 rounded-full text-xs">⌘K</button>
-          <button onClick={() => setShowSettings(true)} className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 rounded-full text-sm">Settings</button>
+          <button onClick={() => setShowPalette(true)} className="hidden sm:inline-flex px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 rounded-full text-xs">⌘K</button>
+          <button onClick={() => setShowSettings(true)} className="hidden sm:inline-flex px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 rounded-full text-sm">Settings</button>
           <button onClick={() => setShowAdd(true)} className="px-4 py-1.5 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-full text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-200">+ Add</button>
-          <button onClick={async () => { await auth.logout(); setLoggedIn(false) }} className="px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white">Logout</button>
+          <button onClick={async () => { await auth.logout(); setLoggedIn(false) }} className="hidden sm:inline-flex px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white">Logout</button>
         </div>
       </header>
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-100/40 dark:bg-zinc-900/40 p-3 space-y-5 overflow-auto shrink-0">
+        <aside className="hidden md:block w-64 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-100/40 dark:bg-zinc-900/40 p-3 space-y-5 overflow-auto shrink-0">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">States</p>
             <div className="space-y-0.5">
@@ -270,11 +298,12 @@ export default function App() {
             <p>Shortcuts: / search • ⌘K palette • dbl-click details</p>
             <p>Ctrl/⌘-click multi-select • Shift-click range</p>
             <p>Click column headers to sort • Columns menu to customize</p>
-            {error && <p className="text-red-600 dark:text-red-400">Error: {(error as any).message?.slice(0, 100)}</p>}
+            {error && <p className="text-red-600 dark:text-red-400">Disconnected: {(error as any).message?.slice(0, 100)}</p>}
+            {!error && <p className={isFetching ? 'text-amber-600' : 'text-emerald-600'}>{isFetching ? 'Refreshing…' : `Connected · ${dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : 'waiting'}`}</p>}
           </div>
         </aside>
         <main className="flex-1 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-100/20 dark:bg-zinc-900/20 shrink-0">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-100/20 dark:bg-zinc-900/20 shrink-0 overflow-x-auto">
             <span className="text-xs text-zinc-500">{selected.size} selected</span>
             <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
             <button onClick={() => handleAction('pause')} className="px-3 py-1 rounded-full text-xs bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700">Pause</button>
@@ -296,7 +325,8 @@ export default function App() {
           </footer>
         </main>
       </div>
-      <AddTorrentModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <AddTorrentModal open={showAdd} droppedFiles={droppedFiles} onClose={() => { setShowAdd(false); setDroppedFiles([]) }} />
+      <RemoveTorrentModal open={removeOpen} count={selected.size} busy={removeBusy} onClose={() => setRemoveOpen(false)} onConfirm={confirmRemove} />
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
       <CommandPalette open={showPalette} onClose={() => setShowPalette(false)} torrents={filtered || []} onPickTorrent={(h) => { selectOnly(h); setDetailHash(h) }} actions={[
         { id: 'palette', label: 'Toggle Command Palette', hotkey: '⌘K', section: 'Actions', run: () => setShowPalette((v) => !v) },

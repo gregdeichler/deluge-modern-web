@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { core } from '../api/client'
 import { useState, useEffect } from 'react'
+import { useStore } from '../stores/torrents'
 
 export default function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { refreshInterval, setRefreshInterval } = useStore()
   const { data: cfg, isLoading, error } = useQuery({
     queryKey: ['config'],
     queryFn: () => core.get_config(),
@@ -56,6 +58,20 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
           {error && <div className="text-xs text-red-600 dark:text-red-400 bg-red-100/30 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-3">{(error as any).message}</div>}
           {cfg && (
             <>
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">Modern UI</p>
+                <div className="flex items-start justify-between gap-4 py-2.5">
+                  <div><span className="text-sm text-zinc-700 dark:text-zinc-300">Refresh interval</span><p className="text-[11px] text-zinc-500">How often torrent status is refreshed</p></div>
+                  <select value={refreshInterval} onChange={(event) => setRefreshInterval(Number(event.target.value))} className="w-64 px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm">
+                    <option value={500}>0.5 seconds</option>
+                    <option value={1000}>1 second</option>
+                    <option value={1500}>1.5 seconds</option>
+                    <option value={3000}>3 seconds</option>
+                    <option value={5000}>5 seconds</option>
+                    <option value={10000}>10 seconds</option>
+                  </select>
+                </div>
+              </div>
               <div>
                 <p className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">Downloads</p>
                 <Field label="Download location" k="download_location" hint="Base path" />

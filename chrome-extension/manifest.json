@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Deluge Modern Remote Add",
+  "version": "0.1.0",
+  "description": "Send magnet links and torrent URLs to your remote Deluge Web instance.",
+  "permissions": ["contextMenus", "storage", "notifications"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_title": "Add to Deluge", "default_popup": "popup.html" },
+  "options_page": "options.html"
+}
