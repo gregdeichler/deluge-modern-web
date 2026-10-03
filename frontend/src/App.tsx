@@ -7,6 +7,8 @@ import SettingsModal from './components/SettingsModal'
 import CommandPalette from './components/CommandPalette'
 import ColumnPicker from './components/ColumnPicker'
 import RemoveTorrentModal from './components/RemoveTorrentModal'
+import MobileTorrentList from './components/MobileTorrentList'
+import TrackerIcon from './components/TrackerIcon'
 import { useStore } from './stores/torrents'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { buildLabel } from './build'
@@ -25,6 +27,7 @@ export default function App() {
   const [removeOpen, setRemoveOpen] = useState(false)
   const [removeBusy, setRemoveBusy] = useState(false)
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
 
   const login = async () => {
     setLoginError(null)
@@ -218,7 +221,7 @@ export default function App() {
 
   if (!loggedIn) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-white dark:bg-zinc-950 p-4">
         <div className="p-6 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 w-[360px] shadow-2xl">
           <h1 className="font-semibold text-lg mb-1">Deluge Modern</h1>
           <p className="text-xs text-zinc-500 mb-4">Connects to /json — same auth as stock WebUI</p>
@@ -232,7 +235,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="h-[100dvh] flex flex-col overflow-hidden bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <header className="min-h-12 flex items-center justify-between gap-2 px-2 sm:px-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 shrink-0">
         <div className="flex items-center gap-3">
           <span className="font-bold tracking-tight">deluge</span>
@@ -251,6 +254,13 @@ export default function App() {
           <button onClick={async () => { await auth.logout(); setLoggedIn(false) }} className="hidden sm:inline-flex px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white">Logout</button>
         </div>
       </header>
+      <div className="border-b border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900 md:hidden">
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3 top-2.5 text-zinc-400">⌕</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search torrents" aria-label="Search torrents" className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-10 text-base outline-none focus:border-sky-500 dark:border-zinc-700 dark:bg-zinc-950" />
+          {search && <button onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-2 top-1.5 grid h-8 w-8 place-items-center rounded-full text-zinc-500">✕</button>}
+        </div>
+      </div>
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden md:block w-64 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-100/40 dark:bg-zinc-900/40 p-3 space-y-5 overflow-auto shrink-0">
           <div>
@@ -274,7 +284,7 @@ export default function App() {
             <div className="space-y-0.5 max-h-52 overflow-auto">
               {trackers.slice(0, 20).map(([host, count]) => (
                 <button key={host} onClick={() => setTrackerFilter(trackerFilter === host ? null : host)} className={`w-full text-left px-2.5 py-1.5 rounded-lg text-sm flex justify-between items-center ${trackerFilter === host ? 'bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-200 border border-sky-200 dark:border-sky-900' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}>
-                  <span className="truncate pr-2">{host}</span><span className="text-xs text-zinc-600">{count}</span>
+                  <span className="flex min-w-0 items-center gap-2"><TrackerIcon host={host} size={18} /><span className="truncate pr-2">{host}</span></span><span className="text-xs text-zinc-600">{count}</span>
                 </button>
               ))}
               {trackers.length === 0 && <p className="text-xs text-zinc-600 px-2">No trackers yet</p>}
@@ -303,7 +313,7 @@ export default function App() {
           </div>
         </aside>
         <main className="flex-1 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-100/20 dark:bg-zinc-900/20 shrink-0 overflow-x-auto">
+          <div className="hidden md:flex items-center gap-2 px-3 py-2 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-100/20 dark:bg-zinc-900/20 shrink-0 overflow-x-auto">
             <span className="text-xs text-zinc-500">{selected.size} selected</span>
             <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
             <button onClick={() => handleAction('pause')} className="px-3 py-1 rounded-full text-xs bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700">Pause</button>
@@ -316,15 +326,39 @@ export default function App() {
             </div>
           </div>
           <div className="flex-1 flex flex-col overflow-hidden" onDoubleClick={() => { const h = Array.from(selected)[0]; if (h) setDetailHash(h) }}>
-            <TorrentTable torrents={sorted} selected={selected} onSelect={handleSelect} sortKey={sortKey} sortDir={sortDir} onSort={setSort} visibleColumns={visibleColumns} />
+            <div className="hidden min-h-0 flex-1 md:flex"><TorrentTable torrents={sorted} selected={selected} onSelect={handleSelect} sortKey={sortKey} sortDir={sortDir} onSort={setSort} visibleColumns={visibleColumns} /></div>
+            <MobileTorrentList torrents={sorted} selected={selected} onToggle={toggleSelect} onOpen={setDetailHash} />
           </div>
           {detailHash && <DetailsDrawer hash={detailHash} onClose={() => setDetailHash(null)} />}
-          <footer className="h-8 flex items-center justify-between px-3 text-xs text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 shrink-0">
+          <footer className="h-8 hidden md:flex items-center justify-between px-3 text-xs text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 shrink-0">
             <span>Down: {filtered.reduce((a, b) => a + (b.download_payload_rate || 0), 0) / 1024 | 0} KB/s • Up: {filtered.reduce((a, b) => a + (b.upload_payload_rate || 0), 0) / 1024 | 0} • {filtered.length} torrents</span>
             <span className="hidden md:inline">{buildLabel} · Filters: {[filter !== 'All' && filter, trackerFilter, labelFilter, search && `"${search}"`].filter(Boolean).join(' • ') || 'none'}</span>
           </footer>
         </main>
       </div>
+      {selected.size > 0 && <div className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex items-center justify-around rounded-2xl border border-zinc-200 bg-white p-2 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900 md:hidden">
+        <button onClick={() => handleAction('pause')} className="min-h-11 px-2 text-sm font-medium">Pause</button>
+        <button onClick={() => handleAction('resume')} className="min-h-11 px-2 text-sm font-medium">Resume</button>
+        <button onClick={() => handleAction('recheck')} className="min-h-11 px-2 text-sm font-medium">Recheck</button>
+        <button onClick={() => handleAction('remove')} className="min-h-11 px-2 text-sm font-medium text-red-600">Remove</button>
+      </div>}
+      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-zinc-200 bg-white/95 px-2 pt-1 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95 md:hidden" style={{ paddingBottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}>
+        <button onClick={() => setShowMobileFilters(false)} className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs text-sky-600"><span className="text-xl">☷</span>Torrents</button>
+        <button onClick={() => setShowAdd(true)} className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs"><span className="text-xl">＋</span>Add</button>
+        <button onClick={() => setShowMobileFilters(true)} className="relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs"><span className="text-xl">≡</span>Filters{(filter !== 'All' || trackerFilter || labelFilter) && <span className="absolute right-5 top-2 h-2 w-2 rounded-full bg-sky-500" />}</button>
+        <button onClick={() => setShowSettings(true)} className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs"><span className="text-xl">⚙</span>Settings</button>
+      </nav>
+      {showMobileFilters && <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setShowMobileFilters(false)}>
+        <section className="absolute inset-x-0 bottom-0 max-h-[82dvh] overflow-y-auto rounded-t-3xl bg-white px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-2xl dark:bg-zinc-900" onClick={(event) => event.stopPropagation()} aria-label="Torrent filters">
+          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+          <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold">Filters</h2><button onClick={() => { setFilter('All'); setTrackerFilter(null); setLabelFilter(null) }} className="min-h-11 px-2 text-sm text-sky-600">Clear all</button></div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</p>
+          <div className="grid grid-cols-2 gap-2">{['All','Downloading','Seeding','Paused','Error','Checking','Queued'].map((state) => <button key={state} onClick={() => setFilter(state)} className={`min-h-11 rounded-xl border px-3 text-left text-sm ${filter === state ? 'border-sky-500 bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300' : 'border-zinc-200 dark:border-zinc-700'}`}>{state}</button>)}</div>
+          {trackers.length > 0 && <><p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-zinc-500">Tracker</p><div className="space-y-2">{trackers.slice(0, 12).map(([host, count]) => <button key={host} onClick={() => setTrackerFilter(trackerFilter === host ? null : host)} className={`flex min-h-11 w-full items-center justify-between rounded-xl border px-3 text-left text-sm ${trackerFilter === host ? 'border-sky-500 bg-sky-50 dark:bg-sky-950' : 'border-zinc-200 dark:border-zinc-700'}`}><span className="flex min-w-0 items-center gap-2"><TrackerIcon host={host} size={22} /><span className="truncate">{host}</span></span><span className="text-zinc-500">{count}</span></button>)}</div></>}
+          {labels.length > 0 && <><p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-zinc-500">Label</p><div className="flex flex-wrap gap-2">{labels.map(([label, count]) => <button key={label} onClick={() => setLabelFilter(labelFilter === label ? null : label)} className={`min-h-11 rounded-full border px-4 text-sm ${labelFilter === label ? 'border-sky-500 bg-sky-50 dark:bg-sky-950' : 'border-zinc-200 dark:border-zinc-700'}`}>{label} · {count}</button>)}</div></>}
+          <button onClick={() => setShowMobileFilters(false)} className="mt-6 min-h-12 w-full rounded-full bg-zinc-900 font-medium text-white dark:bg-white dark:text-black">Show {filtered.length} torrents</button>
+        </section>
+      </div>}
       <AddTorrentModal open={showAdd} droppedFiles={droppedFiles} onClose={() => { setShowAdd(false); setDroppedFiles([]) }} />
       <RemoveTorrentModal open={removeOpen} count={selected.size} busy={removeBusy} onClose={() => setRemoveOpen(false)} onConfirm={confirmRemove} />
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />

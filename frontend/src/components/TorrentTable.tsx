@@ -1,6 +1,7 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import React, { useMemo } from 'react'
 import { ALL_COLUMNS, ColumnId, SortKey, SortDir } from '../stores/torrents'
+import { formatBytes } from '../utils/format'
 
 type Props = {
   torrents: any[]
@@ -10,18 +11,6 @@ type Props = {
   sortDir: SortDir
   onSort: (k: SortKey) => void
   visibleColumns: ColumnId[]
-}
-
-function formatSize(bytes: number): string {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let i = 0
-  let v = bytes
-  while (v >= 1024 && i < units.length - 1) {
-    v /= 1024
-    i++
-  }
-  return `${v.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
 }
 
 function formatEta(s: number): string {
@@ -72,7 +61,7 @@ export default function TorrentTable({ torrents, onSelect, selected, sortKey, so
                   case 'name':
                     return <span key={col.id} className="truncate font-medium" title={t.name}>{t.name}</span>
                   case 'size':
-                    return <span key={col.id} className="text-zinc-600 dark:text-zinc-400">{formatSize(t.total_wanted)}</span>
+                    return <span key={col.id} className="text-zinc-600 dark:text-zinc-400">{formatBytes(t.total_wanted)}</span>
                   case 'progress':
                     return (
                       <div key={col.id} className="flex items-center gap-2">

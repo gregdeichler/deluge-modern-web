@@ -23,10 +23,10 @@ function FilesTab({ hash }: { hash: string }) {
   return (
     <div className="divide-y divide-zinc-200 dark:divide-zinc-900">
       {files.map((f: any, i: number) => (
-        <div key={i} className="flex items-center gap-3 px-3 py-2 text-xs hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30">
-          <span className="flex-1 truncate" title={f.path}>{f.path}</span>
+        <div key={i} className="flex flex-wrap items-center gap-3 px-3 py-3 text-xs hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30">
+          <span className="min-w-0 flex-1 truncate" title={f.path}>{f.path}</span>
           <span className="text-zinc-500 tabular-nums">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
-          <span className="w-20">
+          <span className="hidden w-20 sm:block">
             <div className="h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
               <div className="h-full bg-sky-500 transition-all" style={{ width: `${(data.file_progress?.[i] || 0) * 100}%` }} />
             </div>
@@ -117,16 +117,16 @@ export default function DetailsDrawer({ hash, onClose }: { hash: string | null; 
   if (!hash) return null
 
   return (
-    <div className="h-[340px] border-t border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 flex flex-col shrink-0">
-      <div className="h-11 flex items-center justify-between px-3 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-        <div className="flex gap-1">
+    <div className="fixed inset-0 z-40 flex flex-col bg-zinc-100 dark:bg-zinc-900 md:static md:h-[340px] md:border-t md:border-zinc-200 md:dark:border-zinc-800 md:shrink-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <div className="min-h-14 flex items-center justify-between gap-2 px-3 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+        <div className="flex min-w-0 gap-1 overflow-x-auto py-2">
           {(['files', 'peers', 'trackers', 'options'] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 rounded-full text-xs capitalize transition-colors ${tab === t ? 'bg-zinc-900 text-white dark:bg-white dark:text-black font-medium' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-300 dark:hover:bg-zinc-700'}`}>{t}</button>
+            <button key={t} onClick={() => setTab(t)} className={`min-h-10 whitespace-nowrap px-3 py-1.5 rounded-full text-xs capitalize transition-colors ${tab === t ? 'bg-zinc-900 text-white dark:bg-white dark:text-black font-medium' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-300 dark:hover:bg-zinc-700'}`}>{t}</button>
           ))}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs truncate max-w-[420px] hidden md:block text-zinc-700 dark:text-zinc-300" title={status?.name}>{status?.name}</span>
-          <button onClick={onClose} className="w-7 h-7 rounded-full bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 flex items-center justify-center">✕</button>
+          <button onClick={onClose} aria-label="Close details" className="w-10 h-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 flex items-center justify-center">✕</button>
         </div>
       </div>
       <div className="flex-1 overflow-auto bg-white dark:bg-zinc-950">

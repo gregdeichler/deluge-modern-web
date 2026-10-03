@@ -67,7 +67,7 @@ export default function AddTorrentModal({ open, onClose, droppedFiles = [] }: { 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); void stageFiles(event.dataTransfer.files) }}>
-      <div className="w-[560px] max-w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-6 shadow-2xl">
+      <div className="w-[560px] max-w-full max-h-[100dvh] overflow-y-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-4 sm:p-6 shadow-2xl">
         <h2 className="text-lg font-semibold mb-1">Add Torrent</h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-4">Magnet, URL, or .torrent file. Uses same /upload and web.add_torrents as stock WebUI.</p>
         <div className="space-y-3">
