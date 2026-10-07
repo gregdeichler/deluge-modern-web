@@ -27,6 +27,8 @@ An unpacked Manifest V3 extension is included in [`chrome-extension/`](chrome-ex
 For remote use, put Deluge Web behind HTTPS and authentication (or access it through a private VPN); do not expose an unencrypted Deluge Web login directly to the internet.
 
 ## Dev
+Use Node.js 24 LTS (also used by CI) for the build and browser-based tests.
+
 1. Run deluge: `docker run -p 8112:8112 linuxserver/deluge`
 2. `cd frontend && npm install && npm run dev` -> http://localhost:3000 (proxies /json and /upload)
 3. Login with password `deluge`
