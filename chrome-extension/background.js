@@ -60,7 +60,7 @@ export async function addToDeluge(value) {
   await ensureSession(config)
   const method = target.toLowerCase().startsWith('magnet:') ? 'core.add_torrent_magnet' : 'core.add_torrent_url'
   const result = await rpc(config, method, [target, addOptions(config)])
-  if (result === false || result === null) throw new Error('Deluge did not add the torrent')
+  if (typeof result !== 'string' || !result.trim()) throw new Error('Deluge did not accept the torrent (invalid, duplicate, or rejected)')
   return result
 }
 

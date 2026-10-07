@@ -64,9 +64,22 @@ export async function uploadTorrent(file: File): Promise<string> {
   } catch {
     throw new DelugeError('Invalid JSON response for upload')
   }
-  const staged = Array.isArray(json) ? json[0] : json
-  if (typeof staged !== 'string' || !staged) throw new DelugeError('Malformed upload response')
+  if (!json || typeof json !== 'object' || Array.isArray(json)) throw new DelugeError('Malformed Deluge upload response: expected an object')
+  const upload = json as { success?: unknown; files?: unknown }
+  if (upload.success !== true) throw new DelugeError('Deluge rejected the upload. Check your session and torrent file, then retry.')
+  if (!Array.isArray(upload.files) || !upload.files.length || typeof upload.files[0] !== 'string' || !upload.files[0].trim()) throw new DelugeError('Malformed Deluge upload response: missing staged filename')
+  const staged = upload.files[0]
   return staged
+}
+
+// Core returns a torrent ID; web.add_torrents returns Twisted DeferredList pairs.
+export function requireTorrentId(result: unknown): asserts result is string {
+  if (typeof result !== 'string' || !result.trim()) throw new DelugeError('Deluge did not accept the torrent (invalid, duplicate, or rejected).')
+}
+
+export function acceptedTorrentIndexes(result: unknown, count: number): number[] {
+  if (!Array.isArray(result) || result.length !== count) throw new DelugeError('Malformed Deluge add result. Check the torrent list before retrying.')
+  return result.flatMap((entry, index) => Array.isArray(entry) && entry[0] === true && typeof entry[1] === 'string' && entry[1].trim() ? [index] : [])
 }
 
 // Auth

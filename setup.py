@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 setup(
   name='deluge-modern-web',
-  version='0.5.1',
+  version='0.6.2',
   description='Modern Web UI for Deluge (React replacement)',
   packages=find_packages(),
   include_package_data=True,

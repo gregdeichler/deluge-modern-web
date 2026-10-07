@@ -48,7 +48,7 @@ describe('Deluge API client', () => {
   })
 
   it('uploads a torrent using the same-origin upload endpoint', async () => {
-    vi.mocked(fetch).mockResolvedValue(response(['/tmp/example.torrent']))
+    vi.mocked(fetch).mockResolvedValue(response({ success: true, files: ['/tmp/example.torrent'] }))
     const file = new File(['torrent'], 'example.torrent', { type: 'application/x-bittorrent' })
     await expect(uploadTorrent(file)).resolves.toBe('/tmp/example.torrent')
     expect(fetch).toHaveBeenCalledWith(DELUGE_ENDPOINTS.upload, expect.objectContaining({
@@ -56,5 +56,25 @@ describe('Deluge API client', () => {
       credentials: 'include',
       body: expect.any(FormData),
     }))
+  })
+  it.each([
+    { success: false, files: ['/tmp/example.torrent'] },
+    { success: true, files: [] },
+    { success: true },
+    { success: true, files: [''] },
+    { success: true, files: [42] },
+    ['/tmp/example.torrent'],
+    '/tmp/example.torrent',
+  ])('rejects invalid upload contract %j', async body => {
+    vi.mocked(fetch).mockResolvedValue(response(body))
+    await expect(uploadTorrent(new File(['x'], 'x.torrent'))).rejects.toThrow()
+  })
+  it('rejects malformed upload JSON', async () => {
+    vi.mocked(fetch).mockResolvedValue(response('not-json'))
+    await expect(uploadTorrent(new File(['x'], 'x.torrent'))).rejects.toThrow('Invalid JSON')
+  })
+  it('reports upload HTTP failure', async () => {
+    vi.mocked(fetch).mockResolvedValue(response('unavailable', { status: 502 }))
+    await expect(uploadTorrent(new File(['x'], 'x.torrent'))).rejects.toMatchObject({ code: 502 })
   })
 })
